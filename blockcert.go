@@ -3,16 +3,15 @@ package main
 import (
 	"fmt"
 
-	"github.com/panzerox123/blockcert/src/blockchain"
+	"github.com/panzerox123/blockcert/src/certificate"
 )
 
 func main() {
-	chain := blockchain.NewDigitalCertChain("Kunal")
-	chain.AddCert(0, "My name is kunal bhat. Hopefully you can read my data fine")
-	fmt.Println(chain.GetLatest().Data)
-	fmt.Println(chain.CheckValid())
-	chain.AddCert(1, "This is my second piece of data")
-	fmt.Println(chain.GetLatest().Data)
-	fmt.Println(chain.CheckValid())
-
+	blockchain := certificate.NewBlockChain()
+	blockchain.AddBlock("Hello 1")
+	latest := blockchain.GetLatest()
+	fmt.Printf("Data: %v\nHash: %s\nPreviousHash: %s\n", latest.Data, latest.Hash, latest.PrevHash)
+	blockchain.AddBlock("Hello 2")
+	latest = blockchain.GetLatest()
+	fmt.Printf("Data: %v\nHash: %s\nPreviousHash: %s\n", latest.Data, latest.Hash, latest.PrevHash)
 }
