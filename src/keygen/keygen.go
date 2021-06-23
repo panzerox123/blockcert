@@ -12,6 +12,7 @@ import (
 	"os"
 )
 
+// Generate a private and public RSA key
 func GenerateKeyPair(bits int) (*rsa.PrivateKey, *rsa.PublicKey) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
@@ -20,6 +21,7 @@ func GenerateKeyPair(bits int) (*rsa.PrivateKey, *rsa.PublicKey) {
 	return privateKey, &privateKey.PublicKey
 }
 
+// Generate Hex values for the keypair
 func SaveHexKey(filename string, private *rsa.PrivateKey, public *rsa.PublicKey) {
 	out_file, err := os.Create(filename)
 	if err != nil {
@@ -34,6 +36,7 @@ func SaveHexKey(filename string, private *rsa.PrivateKey, public *rsa.PublicKey)
 	fmt.Fprintf(out_file, "Private: %s\nPublic: %s\n", private_hex, public_hex)
 }
 
+// Parse the hex value for private key
 func ParsePrivateRSA(input string) *rsa.PrivateKey {
 	private_hex, err := hex.DecodeString(input)
 	if err != nil {
@@ -46,6 +49,7 @@ func ParsePrivateRSA(input string) *rsa.PrivateKey {
 	return ret
 }
 
+// Parse the hex value for public key
 func ParsePublicRSA(input string) *rsa.PublicKey {
 	public_hex, err := hex.DecodeString(input)
 	if err != nil {
@@ -58,6 +62,7 @@ func ParsePublicRSA(input string) *rsa.PublicKey {
 	return ret
 }
 
+// Sign data with private key
 func SignData(data string, private *rsa.PrivateKey) string {
 	hashed := sha256.Sum256([]byte(data))
 	ret, err := rsa.SignPKCS1v15(rand.Reader, private, crypto.SHA256, hashed[:])
@@ -67,6 +72,7 @@ func SignData(data string, private *rsa.PrivateKey) string {
 	return hex.EncodeToString(ret)
 }
 
+// Verify data with public key
 func VerifyData(data string, signature string, public *rsa.PublicKey) bool {
 	decoded_signature, err := hex.DecodeString(signature)
 	if err != nil {

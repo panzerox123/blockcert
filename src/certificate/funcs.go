@@ -22,15 +22,18 @@ func NewCertificate(timeStamp time.Time, fileHash string, priv_key *rsa.PrivateK
 	return &new_cert
 }
 
+// Calculate hash values for timestamp and the filehash
 func (c *Certificate) calcHash() string {
 	hashed := sha256.Sum256([]byte(fmt.Sprint(c.TimeStamp) + c.FileHash))
 	return hex.EncodeToString(hashed[:])
 }
 
+// Sign certificate with a private RSA key
 func (c *Certificate) signCertificate(priv_key *rsa.PrivateKey) {
 	c.Signature = keygen.SignData(c.calcHash(), priv_key)
 }
 
+// Verify the certificate hash and signature
 func (c *Certificate) VerifyCertificate(pub_key *rsa.PublicKey, data string) bool {
 	hashed := sha256.Sum256([]byte(data))
 	return keygen.VerifyData(c.calcHash(), c.Signature, pub_key) && hex.EncodeToString(hashed[:]) == c.FileHash
@@ -88,6 +91,7 @@ func (bc *BlockChain) AddBlock(data string, priv_key *rsa.PrivateKey) {
 	bc.chain = append(bc.chain, *new_block)
 }
 
+// Check if a given certificate exists on the blockchain
 func (bc *BlockChain) CheckSignature(data string, public_key *rsa.PublicKey) bool {
 	for _, x := range bc.chain {
 		if x.Data.VerifyCertificate(public_key, data) {
