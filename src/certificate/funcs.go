@@ -1,19 +1,39 @@
 package certificate
 
 import (
+	"crypto/rsa"
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/panzerox123/blockcert/src/keygen"
 )
 
 // Create new object of type Certificate
-func NewCertificate(timeStamp time.Time, fileHash string, signature string) *Certificate {
-	return &Certificate{
+func NewCertificate(timeStamp time.Time, fileHash string, priv_key *rsa.PrivateKey) *Certificate {
+	new_cert := Certificate{
 		TimeStamp: timeStamp,
 		FileHash:  fileHash,
-		Signature: signature,
+		Signature: "",
 	}
+	new_cert.signCertificate(priv_key)
+	return &new_cert
+}
+
+func (c *Certificate) calcHash() string {
+	hashed := sha256.Sum256([]byte(fmt.Sprint(c.TimeStamp) + c.FileHash))
+	return hex.EncodeToString(hashed[:])
+}
+
+func (c *Certificate) signCertificate(priv_key *rsa.PrivateKey) {
+	c.Signature = keygen.SignData(c.calcHash(), priv_key)
+}
+
+func (c *Certificate) VerifyCertificate(pub_key *rsa.PublicKey, data string) bool {
+	hashed := sha256.Sum256([]byte(data))
+	return keygen.VerifyData(c.calcHash(), c.Signature, pub_key) && hex.EncodeToString(hashed[:]) == c.FileHash
 }
 
 // Hash Mining function
@@ -58,14 +78,23 @@ func (bc *BlockChain) GetLatest() *Block {
 }
 
 // Add a block to the BlockChain
-func (bc *BlockChain) AddBlock(data string) {
-	new_cert := NewCertificate(time.Now(), fmt.Sprintf("%x", sha256.Sum256([]byte(data))), "My Sign")
+func (bc *BlockChain) AddBlock(data string, priv_key *rsa.PrivateKey) {
+	new_cert := NewCertificate(time.Now(), fmt.Sprintf("%x", sha256.Sum256([]byte(data))), priv_key)
 	prevHash := ""
 	if len(bc.chain) != 0 {
 		prevHash = bc.GetLatest().Hash
 	}
 	new_block := NewBlock(*new_cert, prevHash)
 	bc.chain = append(bc.chain, *new_block)
+}
+
+func (bc *BlockChain) CheckSignature(data string, public_key *rsa.PublicKey) bool {
+	for _, x := range bc.chain {
+		if x.Data.VerifyCertificate(public_key, data) {
+			return true
+		}
+	}
+	return false
 }
 
 // TO BE DELETED AFTER TESTS
