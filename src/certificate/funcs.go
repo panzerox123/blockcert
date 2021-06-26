@@ -77,23 +77,27 @@ func NewBlock(data Certificate, prevHash string) *Block {
 
 // Get the last block in the BlockChain
 func (bc *BlockChain) GetLatest() *Block {
-	return &bc.chain[len(bc.chain)-1]
+	if len(bc.Chain) > 0 {
+		return &bc.Chain[len(bc.Chain)-1]
+	} else {
+		return nil
+	}
 }
 
 // Add a block to the BlockChain
 func (bc *BlockChain) AddBlock(data string, priv_key *rsa.PrivateKey) {
 	new_cert := NewCertificate(time.Now(), fmt.Sprintf("%x", sha256.Sum256([]byte(data))), priv_key)
 	prevHash := ""
-	if len(bc.chain) != 0 {
+	if len(bc.Chain) != 0 {
 		prevHash = bc.GetLatest().Hash
 	}
 	new_block := NewBlock(*new_cert, prevHash)
-	bc.chain = append(bc.chain, *new_block)
+	bc.Chain = append(bc.Chain, *new_block)
 }
 
 // Check if a given certificate exists on the blockchain
 func (bc *BlockChain) CheckSignature(data string, public_key *rsa.PublicKey) bool {
-	for _, x := range bc.chain {
+	for _, x := range bc.Chain {
 		if x.Data.VerifyCertificate(public_key, data) {
 			return true
 		}
@@ -101,18 +105,13 @@ func (bc *BlockChain) CheckSignature(data string, public_key *rsa.PublicKey) boo
 	return false
 }
 
-// TO BE DELETED AFTER TESTS
-func (bc *BlockChain) AlterChainTest() {
-	bc.chain[2].Hash = "90"
-}
-
 // Check if the BlockChain is valid
 func (bc *BlockChain) ChainValid() bool {
-	for i := 0; i < len(bc.chain); i++ {
-		if bc.chain[i].calcHash() != bc.chain[i].Hash {
+	for i := 0; i < len(bc.Chain); i++ {
+		if bc.Chain[i].calcHash() != bc.Chain[i].Hash {
 			return false
 		}
-		if i > 0 && bc.chain[i].PrevHash != bc.chain[i-1].Hash {
+		if i > 0 && bc.Chain[i].PrevHash != bc.Chain[i-1].Hash {
 			return false
 		}
 	}
@@ -122,6 +121,6 @@ func (bc *BlockChain) ChainValid() bool {
 // Create new object of type BlockChain
 func NewBlockChain() *BlockChain {
 	return &BlockChain{
-		chain: make([]Block, 0),
+		Chain: make([]Block, 0),
 	}
 }

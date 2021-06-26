@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/panzerox123/blockcert/src/certificate"
@@ -33,6 +35,39 @@ func sign(prikey string, pubkey string) {
 	println(blockchain.CheckSignature("This is the third block", publicKey))
 }
 
+func shell(ctx context.Context, node *p2p.P2pNode) {
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Printf("->")
+		cli, _ := reader.ReadString('\n')
+		cli = strings.Replace(cli, "\n", "", -1)
+		cli_args := strings.Split(cli, " ")
+		switch cli_args[0] {
+		case "addcert":
+			privateKey := keygen.ParsePrivateRSA(cli_args[2])
+			node.AddBlock(ctx, cli_args[1], privateKey)
+			fmt.Println("Certificate successfully added!")
+		case "showallcerts":
+			node.ShowBlocks()
+		case "verifyallcerts":
+			ret := node.VerifyChain()
+			if ret {
+				fmt.Println("Blockchain VALID!")
+			} else {
+				fmt.Println("Blockchain INVALID! Rebuilding!")
+			}
+		case "checkcert":
+			pubKey := keygen.ParsePublicRSA(cli_args[2])
+			ret := node.CheckCertificate(cli_args[1], pubKey)
+			if ret {
+				fmt.Println("Certificate VERIFIED!")
+			} else {
+				fmt.Println("Certificate INVALID! Please try again!")
+			}
+		}
+	}
+}
+
 func main() {
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
@@ -47,17 +82,19 @@ func main() {
 				"3048024100d49ec03ffdb560e7f6fa16d65d2472b74ceeec96940f06ae3b8d060c16d58ae512478de038cf05754ae5bb51d29c4b6c14fbf4a5bb838a5d42d59a39b21d03bf0203010001")
 		case "node":
 			ctx := context.Background()
-			node := p2p.StartNode(ctx)
-			addrs := p2p.NodeInfo(node)
-			fmt.Println("libp2p node address: ", addrs)
+			var node *p2p.P2pNode
 			if len(os.Args) > 2 {
-				p2p.ConnectToNode(ctx, node, os.Args[2])
+				node = p2p.NewP2pNode(ctx, os.Args[2])
+			} else {
+				node = p2p.NewP2pNode(ctx, "")
 			}
+			go shell(ctx, node)
 			ch := make(chan os.Signal, 1)
 			signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 			<-ch
 			fmt.Printf("Shutting down...")
-			p2p.CloseNode(node)
+			node.CloseNode()
+
 		}
 	}
 }

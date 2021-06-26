@@ -2,6 +2,8 @@ package p2p
 
 import (
 	"context"
+	"crypto/rsa"
+	"encoding/json"
 	"fmt"
 
 	"github.com/libp2p/go-libp2p"
@@ -26,6 +28,7 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("Available interfaces:")
 	for i, addr := range node.Addrs() {
 		fmt.Printf("%d: %s/ipfs/%s\n", i, addr, node.ID().Pretty())
 	}
@@ -44,13 +47,16 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 			panic(err)
 		}
 	}
+	node_p2p.node = node
 	node_p2p.blockchain = certificate.NewBlockChain()
+	node_p2p.BlockListener(ctx)
 
 	return &node_p2p
 }
 
-func (node_p2p *P2pNode) BlockChainListener(ctx context.Context) {
+func (node_p2p *P2pNode) BlockListener(ctx context.Context) {
 	topic, err := node_p2p.pubsub.Join("Blockchain")
+	node_p2p.blockchainTopic = topic
 	if err != nil {
 		panic(err)
 	}
@@ -64,9 +70,51 @@ func (node_p2p *P2pNode) BlockChainListener(ctx context.Context) {
 			if err != nil {
 				panic(err)
 			}
-			_ = msg.GetData()
+			temp_bc := certificate.NewBlockChain()
+			err = json.Unmarshal(msg.GetData(), temp_bc)
+			if err != nil {
+				panic(err)
+			}
+			node_p2p.blockchain = temp_bc
 		}
 	}()
+}
+
+func (node_p2p *P2pNode) AddBlock(ctx context.Context, data string, prikey *rsa.PrivateKey) {
+	node_p2p.blockchain.AddBlock(data, prikey)
+	node_p2p.BlockPublisher(ctx)
+}
+
+func (node_p2p *P2pNode) ShowBlocks() {
+	for i, x := range node_p2p.blockchain.Chain {
+		fmt.Printf("%d : %v\n", i, x)
+	}
+}
+
+func (node *P2pNode) VerifyChain() bool {
+	return node.blockchain.ChainValid()
+}
+
+func (node *P2pNode) CheckCertificate(data string, pubkey *rsa.PublicKey) bool {
+	return node.blockchain.CheckSignature(data, pubkey)
+}
+
+func (node_p2p *P2pNode) BlockPublisher(ctx context.Context) {
+	jsoned_bc, err := json.Marshal(node_p2p.blockchain)
+	if err != nil {
+		panic(err)
+	}
+	err = node_p2p.blockchainTopic.Publish(ctx, jsoned_bc)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (node_p2p *P2pNode) CloseNode() {
+	err := node_p2p.node.Close()
+	if err != nil {
+		panic(err)
+	}
 }
 
 // TODO: Remove below functions

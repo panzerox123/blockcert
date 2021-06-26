@@ -16,5 +16,5 @@ type Block struct {
 }
 
 type BlockChain struct {
-	chain []Block
+	Chain []Block
 }
