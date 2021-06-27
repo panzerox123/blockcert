@@ -1,9 +1,7 @@
 package certificate
 
-import "time"
-
 type Certificate struct {
-	TimeStamp time.Time
+	TimeStamp int64
 	FileHash  string
 	Signature string
 }

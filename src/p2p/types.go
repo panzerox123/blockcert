@@ -7,8 +7,9 @@ import (
 )
 
 type P2pNode struct {
-	node            host.Host
-	blockchain      *certificate.BlockChain
-	pubsub          *pubsub.PubSub
-	blockchainTopic *pubsub.Topic
+	node                   host.Host
+	blockchain             *certificate.BlockChain
+	pubsub                 *pubsub.PubSub
+	blockchainTopic        *pubsub.Topic
+	blockchainSubscription *pubsub.Subscription
 }

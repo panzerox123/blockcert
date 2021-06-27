@@ -12,7 +12,7 @@ import (
 )
 
 // Create new object of type Certificate
-func NewCertificate(timeStamp time.Time, fileHash string, priv_key *rsa.PrivateKey) *Certificate {
+func NewCertificate(timeStamp int64, fileHash string, priv_key *rsa.PrivateKey) *Certificate {
 	new_cert := Certificate{
 		TimeStamp: timeStamp,
 		FileHash:  fileHash,
@@ -86,7 +86,7 @@ func (bc *BlockChain) GetLatest() *Block {
 
 // Add a block to the BlockChain
 func (bc *BlockChain) AddBlock(data string, priv_key *rsa.PrivateKey) {
-	new_cert := NewCertificate(time.Now(), fmt.Sprintf("%x", sha256.Sum256([]byte(data))), priv_key)
+	new_cert := NewCertificate(time.Now().Unix(), fmt.Sprintf("%x", sha256.Sum256([]byte(data))), priv_key)
 	prevHash := ""
 	if len(bc.Chain) != 0 {
 		prevHash = bc.GetLatest().Hash

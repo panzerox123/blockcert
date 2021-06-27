@@ -37,7 +37,7 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("Parse Address:", m_addr)
+		fmt.Println("Connected to address:", m_addr)
 		peer_info, err := peerstore.AddrInfoFromP2pAddr(m_addr)
 		if err != nil {
 			panic(err)
@@ -52,6 +52,10 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 	if err != nil {
 		panic(err)
 	}
+	node_p2p.blockchainSubscription, err = node_p2p.blockchainTopic.Subscribe()
+	if err != nil {
+		panic(err)
+	}
 	node_p2p.blockchain = certificate.NewBlockChain()
 	node_p2p.BlockListener(ctx)
 
@@ -59,13 +63,10 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 }
 
 func (node_p2p *P2pNode) BlockListener(ctx context.Context) {
-	subscription, err := node_p2p.blockchainTopic.Subscribe()
-	if err != nil {
-		panic(err)
-	}
+
 	go func() {
 		for {
-			msg, err := subscription.Next(ctx)
+			msg, err := node_p2p.blockchainSubscription.Next(ctx)
 			if err != nil {
 				panic(err)
 			}
@@ -91,7 +92,9 @@ func (node_p2p *P2pNode) ShowBlocks() {
 }
 
 func (node *P2pNode) VerifyChain() bool {
-	return node.blockchain.ChainValid()
+	val := node.blockchain.ChainValid()
+	fmt.Println(val)
+	return val
 }
 
 func (node *P2pNode) CheckCertificate(data string, pubkey *rsa.PublicKey) bool {
