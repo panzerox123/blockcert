@@ -48,6 +48,10 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 		}
 	}
 	node_p2p.node = node
+	node_p2p.blockchainTopic, err = node_p2p.pubsub.Join("Blockchain")
+	if err != nil {
+		panic(err)
+	}
 	node_p2p.blockchain = certificate.NewBlockChain()
 	node_p2p.BlockListener(ctx)
 
@@ -55,12 +59,7 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 }
 
 func (node_p2p *P2pNode) BlockListener(ctx context.Context) {
-	topic, err := node_p2p.pubsub.Join("Blockchain")
-	node_p2p.blockchainTopic = topic
-	if err != nil {
-		panic(err)
-	}
-	subscription, err := topic.Subscribe()
+	subscription, err := node_p2p.blockchainTopic.Subscribe()
 	if err != nil {
 		panic(err)
 	}
