@@ -5,15 +5,23 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
 	peerstore "github.com/libp2p/go-libp2p-core/peer"
+	discovery "github.com/libp2p/go-libp2p-discovery"
+	kdht "github.com/libp2p/go-libp2p-kad-dht"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
+	disc "github.com/libp2p/go-libp2p/p2p/discovery"
 	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
+
 	"github.com/multiformats/go-multiaddr"
 	"github.com/panzerox123/blockcert/src/certificate"
 )
+
+var DISABLE_DISCOVERY bool = true
 
 func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 	var node_p2p P2pNode
@@ -37,7 +45,7 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("Connected to address:", m_addr)
+		fmt.Println("Connected to peer:", m_addr)
 		peer_info, err := peerstore.AddrInfoFromP2pAddr(m_addr)
 		if err != nil {
 			panic(err)
@@ -48,6 +56,9 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 		}
 	}
 	node_p2p.node = node
+	if !DISABLE_DISCOVERY {
+		node_p2p.peerDiscovery(ctx)
+	}
 	node_p2p.blockchainTopic, err = node_p2p.pubsub.Join("Blockchain")
 	if err != nil {
 		panic(err)
@@ -60,6 +71,75 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 	node_p2p.BlockListener(ctx)
 
 	return &node_p2p
+}
+
+type discoveryNotifee struct {
+	h host.Host
+	c context.Context
+}
+
+func (d *discoveryNotifee) HandlePeerFound(pi peerstore.AddrInfo) {
+	fmt.Printf("Discovered new peer: %s\n", pi.ID.Pretty())
+	err := d.h.Connect(d.c, pi)
+	if err != nil {
+		fmt.Printf("!! Could not connect to peer : %s\n", pi.ID.Pretty())
+	}
+}
+
+func (node_p2p *P2pNode) localPeerDiscovery(ctx context.Context) {
+	serv, err := disc.NewMdnsService(ctx, node_p2p.node, time.Hour, "blockchain_pubsub")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	n := discoveryNotifee{h: node_p2p.node, c: ctx}
+	serv.RegisterNotifee(&n)
+}
+
+func (node_p2p *P2pNode) peerDiscovery(ctx context.Context) {
+	kaddht, err := kdht.New(ctx, node_p2p.node)
+	if err != nil {
+		println(err)
+	}
+	if err = kaddht.Bootstrap(ctx); err != nil {
+		panic(err)
+	}
+	var wg sync.WaitGroup
+	for _, peerAddr := range kdht.DefaultBootstrapPeers {
+		peerinfo, _ := peerstore.AddrInfoFromP2pAddr(peerAddr)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := node_p2p.node.Connect(ctx, *peerinfo); err != nil {
+				fmt.Println("(Bootstrap)!! Could not connect to peer: ", peerinfo.ID)
+			} else {
+				fmt.Println("(Bootstrap)Connected to peer: ", peerinfo.ID)
+			}
+		}()
+	}
+	wg.Wait()
+	routingDiscovery := discovery.NewRoutingDiscovery(kaddht)
+	discovery.Advertise(ctx, routingDiscovery, "peer_discovery")
+	peers, err := routingDiscovery.FindPeers(ctx, "peer_discovery")
+	if err != nil {
+		panic(err)
+	}
+	for peer := range peers {
+		if peer.ID == node_p2p.node.ID() {
+			continue
+		} else {
+			err := node_p2p.node.Connect(ctx, peer)
+			if err != nil {
+				fmt.Println("!! Could not connect to peer: ", peer.ID)
+			}
+			fmt.Println("Connected to peer:", peer.ID)
+		}
+	}
+}
+
+func (node_p2p *P2pNode) ReturnPeerList() {
+	val := node_p2p.node.Peerstore()
+	fmt.Println(val.PeersWithAddrs())
 }
 
 func (node_p2p *P2pNode) BlockListener(ctx context.Context) {
