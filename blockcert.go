@@ -63,7 +63,7 @@ func main() {
 				return
 			}
 			generateKeys(os.Args[2])
-		case "node":
+		case "shell":
 			ctx := context.Background()
 			var node *p2p.P2pNode
 			if len(os.Args) > 2 {
