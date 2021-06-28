@@ -13,7 +13,7 @@ import (
 )
 
 func FileByteOut(srcFile string) string {
-	data, err := ioutil.ReadFile("test.txt")
+	data, err := ioutil.ReadFile(srcFile)
 	if err != nil {
 		panic(err)
 	}
