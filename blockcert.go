@@ -59,7 +59,7 @@ func shell(ctx context.Context, node *p2p.P2pNode) {
 			}
 		case "checkcert":
 			pubKey := keygen.ParsePublicRSA(cli_args[2])
-			ret := node.CheckCertificate(cli_args[1], pubKey)
+			ret := node.CheckCertificate(certificate.FileByteOut(cli_args[1]), pubKey)
 			if ret {
 				fmt.Println("Certificate VERIFIED!")
 			} else {
