@@ -46,7 +46,7 @@ func shell(ctx context.Context, node *p2p.P2pNode) {
 		switch cli_args[0] {
 		case "addcert":
 			privateKey := keygen.ParsePrivateRSA(cli_args[2])
-			node.AddBlock(ctx, cli_args[1], privateKey)
+			node.AddBlock(ctx, certificate.FileByteOut(cli_args[1]), privateKey)
 			fmt.Println("Certificate successfully added!")
 		case "showallcerts":
 			node.ShowBlocks()
@@ -59,7 +59,7 @@ func shell(ctx context.Context, node *p2p.P2pNode) {
 			}
 		case "checkcert":
 			pubKey := keygen.ParsePublicRSA(cli_args[2])
-			ret := node.CheckCertificate(cli_args[1], pubKey)
+			ret := node.CheckCertificate(certificate.FileByteOut(cli_args[1]), pubKey)
 			if ret {
 				fmt.Println("Certificate VERIFIED!")
 			} else {
