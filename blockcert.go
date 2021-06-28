@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/panzerox123/blockcert/src/certificate"
 	"github.com/panzerox123/blockcert/src/keygen"
 	"github.com/panzerox123/blockcert/src/p2p"
 )
