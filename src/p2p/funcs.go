@@ -26,7 +26,7 @@ import (
 var DISABLE_DISCOVERY bool = false
 
 func RAND_FUNC() int {
-	return 4 + rand.Intn(4)
+	return 2 + rand.Intn(4)
 }
 
 func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {

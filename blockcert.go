@@ -22,7 +22,7 @@ func generateKeys(filename string) {
 func shell(ctx context.Context, node *p2p.P2pNode) {
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Printf("blockcert_shell> ")
+		fmt.Printf("\033[35mblockcert_shell>\033[0m ")
 		cli, _ := reader.ReadString('\n')
 		cli = strings.Replace(cli, "\n", "", -1)
 		cli_args := strings.Split(cli, " ")
@@ -58,11 +58,12 @@ func main() {
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
 		case "keygen":
-			if len(os.Args) < 2 {
+			if len(os.Args) < 3 {
 				generateKeys("certificate.key")
 				return
+			} else {
+				generateKeys(os.Args[2])
 			}
-			generateKeys(os.Args[2])
 		case "shell":
 			ctx := context.Background()
 			var node *p2p.P2pNode
