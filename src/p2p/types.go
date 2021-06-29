@@ -12,4 +12,6 @@ type P2pNode struct {
 	pubsub                 *pubsub.PubSub
 	blockchainTopic        *pubsub.Topic
 	blockchainSubscription *pubsub.Subscription
+	newcertTopic           *pubsub.Topic
+	newcertSubscription    *pubsub.Subscription
 }

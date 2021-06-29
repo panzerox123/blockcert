@@ -86,7 +86,7 @@ func (d *discoveryNotifee) HandlePeerFound(pi peerstore.AddrInfo) {
 	}
 }
 
-func (node_p2p *P2pNode) localPeerDiscovery(ctx context.Context) {
+func (node_p2p *P2pNode) LocalPeerDiscovery(ctx context.Context) {
 	serv, err := disc.NewMdnsService(ctx, node_p2p.node, time.Hour, "blockchain_pubsub")
 	if err != nil {
 		fmt.Println(err)

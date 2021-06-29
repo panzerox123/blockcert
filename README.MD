@@ -27,12 +27,17 @@ $ blockcert shell <peer_addr>
 
 #### Blockcert shell commands
 - `addcert <filename> <private_key>`
+
     Create a certificate for a file
 - `verifyallcert`
+
     Verify the blockchain
 - `checkcert <filename> <public_key>`
+
     Check the certificate for a particular file
 - `showallcerts`
+
     Display blockchain info
 - `peers`
+
     List all peers
