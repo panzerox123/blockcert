@@ -21,7 +21,7 @@ import (
 	"github.com/panzerox123/blockcert/src/certificate"
 )
 
-var DISABLE_DISCOVERY bool = true
+var DISABLE_DISCOVERY bool = false
 
 func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 	var node_p2p P2pNode
@@ -77,6 +77,7 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 	}
 	node_p2p.blockchain = certificate.NewBlockChain()
 	node_p2p.BlockListener(ctx)
+	node_p2p.BlockPublisher(ctx)
 
 	return &node_p2p
 }
@@ -163,7 +164,23 @@ func (node_p2p *P2pNode) BlockListener(ctx context.Context) {
 			if err != nil {
 				panic(err)
 			}
-			node_p2p.blockchain = temp_bc
+			if !temp_bc.ChainValid() {
+				continue
+			} else {
+				if (!node_p2p.blockchain.ChainValid()) || (len(temp_bc.Chain) > len(node_p2p.blockchain.Chain)) {
+					node_p2p.blockchain = temp_bc
+				} else if len(temp_bc.Chain) == len(node_p2p.blockchain.Chain) {
+					temp_latest := temp_bc.GetLatest()
+					curr_latest := node_p2p.blockchain.GetLatest()
+					if temp_latest != nil && curr_latest != nil && temp_latest.Proof > curr_latest.Proof {
+						node_p2p.blockchain = temp_bc
+					} else {
+						node_p2p.BlockPublisher(ctx)
+					}
+				} else {
+					node_p2p.BlockPublisher(ctx)
+				}
+			}
 		}
 	}()
 }
@@ -190,6 +207,9 @@ func (node *P2pNode) CheckCertificate(data string, pubkey *rsa.PublicKey) bool {
 }
 
 func (node_p2p *P2pNode) BlockPublisher(ctx context.Context) {
+	if !node_p2p.blockchain.ChainValid() {
+		return
+	}
 	jsoned_bc, err := json.Marshal(node_p2p.blockchain)
 	if err != nil {
 		panic(err)
