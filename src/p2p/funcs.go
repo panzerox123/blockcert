@@ -67,6 +67,14 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 	if err != nil {
 		panic(err)
 	}
+	node_p2p.newcertTopic, err = node_p2p.pubsub.Join("Newcert")
+	if err != nil {
+		panic(err)
+	}
+	node_p2p.newcertSubscription, err = node_p2p.newcertTopic.Subscribe()
+	if err != nil {
+		panic(err)
+	}
 	node_p2p.blockchain = certificate.NewBlockChain()
 	node_p2p.BlockListener(ctx)
 
