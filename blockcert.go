@@ -28,8 +28,8 @@ func shell(ctx context.Context, node *p2p.P2pNode) {
 		cli_args := strings.Split(cli, " ")
 		switch cli_args[0] {
 		case "addcert":
-			privateKey := keygen.ParsePrivateRSA(cli_args[2])
-			node.AddBlock(ctx, certificate.FileByteOut(cli_args[1]), privateKey)
+			//privateKey := keygen.ParsePrivateRSA(cli_args[2])
+			node.NewCertPublisher(ctx, cli_args[1], cli_args[2])
 			fmt.Println("Certificate successfully added!")
 		case "showallcerts":
 			node.ShowBlocks()

@@ -73,14 +73,14 @@ func (b *Block) calcHash() string {
 }
 
 // Create new object of type Block
-func NewBlock(data Certificate, prevHash string) *Block {
+func NewBlock(data Certificate, prevHash string, diff int) *Block {
 	new_block := Block{
 		Data:     data,
 		Hash:     "",
 		PrevHash: prevHash,
 		Proof:    0,
 	}
-	new_block.Hash, new_block.Proof = new_block.mineHash(4)
+	new_block.Hash, new_block.Proof = new_block.mineHash(diff)
 	return &new_block
 }
 
@@ -94,14 +94,25 @@ func (bc *BlockChain) GetLatest() *Block {
 }
 
 // Add a block to the BlockChain
-func (bc *BlockChain) AddBlock(data string, priv_key *rsa.PrivateKey) {
+func (bc *BlockChain) AddBlock(data string, priv_key *rsa.PrivateKey, diff int) {
 	new_cert := NewCertificate(time.Now().Unix(), fmt.Sprintf("%x", sha256.Sum256([]byte(data))), priv_key)
 	prevHash := ""
 	if len(bc.Chain) != 0 {
 		prevHash = bc.GetLatest().Hash
 	}
-	new_block := NewBlock(*new_cert, prevHash)
+	new_block := NewBlock(*new_cert, prevHash, diff)
 	bc.Chain = append(bc.Chain, *new_block)
+}
+
+// Check if data exists on the blockchain network
+func (bc *BlockChain) CheckDataExists(data string) bool {
+	for _, x := range bc.Chain {
+		hashed := sha256.Sum256([]byte(data))
+		if x.Data.FileHash == hex.EncodeToString(hashed[:]) {
+			return true
+		}
+	}
+	return false
 }
 
 // Check if a given certificate exists on the blockchain

@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -19,9 +20,14 @@ import (
 
 	"github.com/multiformats/go-multiaddr"
 	"github.com/panzerox123/blockcert/src/certificate"
+	"github.com/panzerox123/blockcert/src/keygen"
 )
 
 var DISABLE_DISCOVERY bool = false
+
+func RAND_FUNC() int {
+	return 4 + rand.Intn(4)
+}
 
 func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 	var node_p2p P2pNode
@@ -78,6 +84,7 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 	node_p2p.blockchain = certificate.NewBlockChain()
 	node_p2p.BlockListener(ctx)
 	node_p2p.BlockPublisher(ctx)
+	node_p2p.NewCertListener(ctx)
 
 	return &node_p2p
 }
@@ -167,6 +174,7 @@ func (node_p2p *P2pNode) BlockListener(ctx context.Context) {
 			if !temp_bc.ChainValid() {
 				continue
 			} else {
+				node_p2p.LockNet.Lock()
 				if (!node_p2p.blockchain.ChainValid()) || (len(temp_bc.Chain) > len(node_p2p.blockchain.Chain)) {
 					node_p2p.blockchain = temp_bc
 				} else if len(temp_bc.Chain) == len(node_p2p.blockchain.Chain) {
@@ -180,14 +188,56 @@ func (node_p2p *P2pNode) BlockListener(ctx context.Context) {
 				} else {
 					node_p2p.BlockPublisher(ctx)
 				}
+				node_p2p.LockNet.Unlock()
 			}
 		}
 	}()
 }
 
-func (node_p2p *P2pNode) AddBlock(ctx context.Context, data string, prikey *rsa.PrivateKey) {
-	node_p2p.blockchain.AddBlock(data, prikey)
+func (node_p2p *P2pNode) _AddBlock(ctx context.Context, data string, prikey *rsa.PrivateKey) {
+	node_p2p.blockchain.AddBlock(data, prikey, 0)
 	node_p2p.BlockPublisher(ctx)
+}
+
+func (node_p2p *P2pNode) NewCertPublisher(ctx context.Context, filename string, private_key string) {
+	data := certificate.FileByteOut(filename)
+	cert_info := NewCertPublish{
+		Data:       data,
+		PrivateKey: private_key,
+	}
+	jsoned_data, err := json.Marshal(cert_info)
+	if err != nil {
+		panic(err)
+	}
+	err = node_p2p.newcertTopic.Publish(ctx, jsoned_data)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (node_p2p *P2pNode) NewCertListener(ctx context.Context) {
+	go func() {
+		for {
+			msg, err := node_p2p.newcertSubscription.Next(ctx)
+			if err != nil {
+				panic(err)
+			}
+			var temp_cert NewCertPublish
+			err = json.Unmarshal(msg.GetData(), &temp_cert)
+			if err != nil {
+				panic(err)
+			}
+			priv_key := keygen.ParsePrivateRSA(temp_cert.PrivateKey)
+			node_p2p.LockNet.Lock()
+			if node_p2p.blockchain.CheckDataExists(temp_cert.Data) {
+				node_p2p.LockNet.Unlock()
+				continue
+			}
+			node_p2p.blockchain.AddBlock(temp_cert.Data, priv_key, RAND_FUNC())
+			node_p2p.BlockPublisher(ctx)
+			node_p2p.LockNet.Unlock()
+		}
+	}()
 }
 
 func (node_p2p *P2pNode) ShowBlocks() {
