@@ -1,5 +1,6 @@
 blockcert
 *.key
+*.exe
 # test extensions
 *.log
 *.jpg
