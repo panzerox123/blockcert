@@ -20,6 +20,6 @@ type P2pNode struct {
 }
 
 type NewCertPublish struct {
-	Data       string
+	Data       []byte
 	PrivateKey string
 }

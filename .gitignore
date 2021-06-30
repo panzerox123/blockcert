@@ -1,3 +1,9 @@
 blockcert
 *.key
+# test extensions
 *.log
+*.jpg
+*.png
+*.pdf
+*.docx
+*.txt

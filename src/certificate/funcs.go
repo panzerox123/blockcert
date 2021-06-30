@@ -12,12 +12,12 @@ import (
 	"github.com/panzerox123/blockcert/src/keygen"
 )
 
-func FileByteOut(srcFile string) string {
+func FileByteOut(srcFile string) []byte {
 	data, err := ioutil.ReadFile(srcFile)
 	if err != nil {
 		panic(err)
 	}
-	return string([]byte(data))
+	return data
 }
 
 // Create new object of type Certificate
@@ -43,8 +43,8 @@ func (c *Certificate) signCertificate(priv_key *rsa.PrivateKey) {
 }
 
 // Verify the certificate hash and signature
-func (c *Certificate) VerifyCertificate(pub_key *rsa.PublicKey, data string) bool {
-	hashed := sha256.Sum256([]byte(data))
+func (c *Certificate) VerifyCertificate(pub_key *rsa.PublicKey, data []byte) bool {
+	hashed := sha256.Sum256(data)
 	return keygen.VerifyData(c.calcHash(), c.Signature, pub_key) && hex.EncodeToString(hashed[:]) == c.FileHash
 }
 
@@ -94,8 +94,8 @@ func (bc *BlockChain) GetLatest() *Block {
 }
 
 // Add a block to the BlockChain
-func (bc *BlockChain) AddBlock(data string, priv_key *rsa.PrivateKey, diff int) {
-	new_cert := NewCertificate(time.Now().Unix(), fmt.Sprintf("%x", sha256.Sum256([]byte(data))), priv_key)
+func (bc *BlockChain) AddBlock(data []byte, priv_key *rsa.PrivateKey, diff int) {
+	new_cert := NewCertificate(time.Now().Unix(), fmt.Sprintf("%x", sha256.Sum256(data)), priv_key)
 	prevHash := ""
 	if len(bc.Chain) != 0 {
 		prevHash = bc.GetLatest().Hash
@@ -105,9 +105,9 @@ func (bc *BlockChain) AddBlock(data string, priv_key *rsa.PrivateKey, diff int) 
 }
 
 // Check if data exists on the blockchain network
-func (bc *BlockChain) CheckDataExists(data string) bool {
+func (bc *BlockChain) CheckDataExists(data []byte) bool {
 	for _, x := range bc.Chain {
-		hashed := sha256.Sum256([]byte(data))
+		hashed := sha256.Sum256(data)
 		if x.Data.FileHash == hex.EncodeToString(hashed[:]) {
 			return true
 		}
@@ -116,7 +116,7 @@ func (bc *BlockChain) CheckDataExists(data string) bool {
 }
 
 // Check if a given certificate exists on the blockchain
-func (bc *BlockChain) CheckSignature(data string, public_key *rsa.PublicKey) bool {
+func (bc *BlockChain) CheckSignature(data []byte, public_key *rsa.PublicKey) bool {
 	for _, x := range bc.Chain {
 		if x.Data.VerifyCertificate(public_key, data) {
 			return true

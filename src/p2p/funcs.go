@@ -194,7 +194,7 @@ func (node_p2p *P2pNode) BlockListener(ctx context.Context) {
 	}()
 }
 
-func (node_p2p *P2pNode) _AddBlock(ctx context.Context, data string, prikey *rsa.PrivateKey) {
+func (node_p2p *P2pNode) _AddBlock(ctx context.Context, data []byte, prikey *rsa.PrivateKey) {
 	node_p2p.blockchain.AddBlock(data, prikey, 0)
 	node_p2p.BlockPublisher(ctx)
 }
@@ -252,7 +252,7 @@ func (node *P2pNode) VerifyChain() bool {
 	return val
 }
 
-func (node *P2pNode) CheckCertificate(data string, pubkey *rsa.PublicKey) bool {
+func (node *P2pNode) CheckCertificate(data []byte, pubkey *rsa.PublicKey) bool {
 	return node.blockchain.CheckSignature(data, pubkey)
 }
 
