@@ -258,7 +258,7 @@ func (node *P2pNode) VerifyChain() bool {
 	fmt.Println(val)
 	return val
 }
-func (node *P2pNode) bcToJson(srcFile string) {
+func (node *P2pNode) BcToJson(srcFile string) {
 	node.blockchain.SaveToJson(srcFile)
 }
 

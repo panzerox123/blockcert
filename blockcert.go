@@ -32,6 +32,7 @@ func shell(ctx context.Context, node *p2p.P2pNode) {
 			//privateKey := keygen.ParsePrivateRSA(cli_args[2])
 			node.NewCertPublisher(ctx, cli_args[1], cli_args[2])
 			fmt.Println("Certificate successfully added!")
+			node.BcToJson(cli_args[3])
 		case "showallcerts":
 			node.ShowBlocks()
 		case "peers":
