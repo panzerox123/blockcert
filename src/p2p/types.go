@@ -16,6 +16,7 @@ type P2pNode struct {
 	blockchainSubscription *pubsub.Subscription
 	newcertTopic           *pubsub.Topic
 	newcertSubscription    *pubsub.Subscription
+	interfaces             []string
 	LockNet                sync.Mutex
 }
 

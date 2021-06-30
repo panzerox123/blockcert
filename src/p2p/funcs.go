@@ -10,13 +10,10 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/host"
 	peerstore "github.com/libp2p/go-libp2p-core/peer"
 	discovery "github.com/libp2p/go-libp2p-discovery"
 	kdht "github.com/libp2p/go-libp2p-kad-dht"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
-	disc "github.com/libp2p/go-libp2p/p2p/discovery"
-	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
 
 	"github.com/multiformats/go-multiaddr"
 	"github.com/panzerox123/blockcert/src/certificate"
@@ -47,29 +44,32 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 		libp2p.NATPortMap(),
 	)
 	if err != nil {
-		panic(err)
+		fmt.Println(Red+"[❌]"+Reset, "Error creating new node:", err.Error())
+		return nil
 	}
 	node_p2p.pubsub, err = pubsub.NewFloodSub(ctx, node)
 	if err != nil {
-		panic(err)
+		fmt.Println(Red+"[❌]"+Reset, "Error creating new PUB/SUB:", err.Error())
+		return nil
 	}
-	fmt.Println("Available interfaces:")
-	for i, addr := range node.Addrs() {
-		fmt.Printf("%d: %s/ipfs/%s\n", i, addr, node.ID().Pretty())
+	for _, addr := range node.Addrs() {
+		node_p2p.interfaces = append(node_p2p.interfaces, fmt.Sprintf("%s/ipfs/%s\n", addr, node.ID().Pretty()))
 	}
 	if addrstr != "" {
 		m_addr, err := multiaddr.NewMultiaddr(addrstr)
 		if err != nil {
-			panic(err)
+			fmt.Println(Red+"[❌]"+Reset, "Error converting multiaddr:", err.Error())
+			return nil
 		}
 		fmt.Println("Connected to peer:", m_addr)
 		peer_info, err := peerstore.AddrInfoFromP2pAddr(m_addr)
 		if err != nil {
-			panic(err)
+			fmt.Println(Red+"[❌]"+Reset, "Error creating converting to AddrInfo:", err.Error())
+			return nil
 		}
 		if err := node.Connect(ctx, *peer_info); err != nil {
-			fmt.Println("Could not connect to peer!")
-			panic(err)
+			fmt.Println(Red+"[❌]"+Reset, "Could not connect to given peer!", err.Error())
+			return nil
 		}
 	}
 	node_p2p.node = node
@@ -78,58 +78,56 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 	}
 	node_p2p.blockchainTopic, err = node_p2p.pubsub.Join("Blockchain")
 	if err != nil {
-		panic(err)
+		fmt.Println(Red+"[❌]"+Reset, "Error joining topic \"Blockchain\":", err.Error())
+		return nil
 	}
 	node_p2p.blockchainSubscription, err = node_p2p.blockchainTopic.Subscribe()
 	if err != nil {
-		panic(err)
+		fmt.Println(Red+"[❌]"+Reset, "Error subscribing to topic \"Blockchain\":", err.Error())
+		return nil
 	}
 	node_p2p.newcertTopic, err = node_p2p.pubsub.Join("Newcert")
 	if err != nil {
-		panic(err)
+		fmt.Println(Red+"[❌]"+Reset, "Error joining topic \"Newcert\":", err.Error())
+		return nil
 	}
 	node_p2p.newcertSubscription, err = node_p2p.newcertTopic.Subscribe()
 	if err != nil {
-		panic(err)
+		fmt.Println(Red+"[❌]"+Reset, "Error subscribing to topic \"Newcert\":", err.Error())
+		return nil
 	}
 	node_p2p.blockchain = certificate.NewBlockChain()
-	node_p2p.BlockListener(ctx)
-	node_p2p.BlockPublisher(ctx)
-	node_p2p.NewCertListener(ctx)
-
+	node_p2p.blockListener(ctx)
+	node_p2p.blockPublisher(ctx)
+	node_p2p.newCertListener(ctx)
+	node_p2p.peerDiscoveryTimed(ctx)
 	return &node_p2p
 }
 
-type discoveryNotifee struct {
-	h host.Host
-	c context.Context
-}
-
-func (d *discoveryNotifee) HandlePeerFound(pi peerstore.AddrInfo) {
-	fmt.Printf("Discovered new peer: %s\n", pi.ID.Pretty())
-	err := d.h.Connect(d.c, pi)
-	if err != nil {
-		fmt.Printf("!! Could not connect to peer : %s\n", pi.ID.Pretty())
+func (node_p2p *P2pNode) PrintInterfaces() {
+	for i, x := range node_p2p.interfaces {
+		fmt.Println(Cyan+"[interface", i, "\b]"+Reset, x)
 	}
 }
 
-func (node_p2p *P2pNode) LocalPeerDiscovery(ctx context.Context) {
-	serv, err := disc.NewMdnsService(ctx, node_p2p.node, time.Hour, "blockchain_pubsub")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	n := discoveryNotifee{h: node_p2p.node, c: ctx}
-	serv.RegisterNotifee(&n)
+func (node_p2p *P2pNode) peerDiscoveryTimed(ctx context.Context) {
+	go func() {
+		for {
+			time.Sleep(30 * time.Minute)
+			fmt.Println(Blue+"[⌛]"+Reset, "Discovering new peers!")
+			node_p2p.peerDiscovery(ctx)
+			node_p2p.blockPublisher(ctx)
+		}
+	}()
 }
 
 func (node_p2p *P2pNode) peerDiscovery(ctx context.Context) {
 	kaddht, err := kdht.New(ctx, node_p2p.node)
 	if err != nil {
-		println(err)
+		fmt.Println(Red+"[❌]"+Reset, "Error creating new DHT:", err.Error())
 	}
 	if err = kaddht.Bootstrap(ctx); err != nil {
-		panic(err)
+		fmt.Println(Red+"[❌]"+Reset, "Error bootstrapping peers:", err.Error())
 	}
 	var wg sync.WaitGroup
 	for _, peerAddr := range kdht.DefaultBootstrapPeers {
@@ -149,7 +147,8 @@ func (node_p2p *P2pNode) peerDiscovery(ctx context.Context) {
 	discovery.Advertise(ctx, routingDiscovery, "peer_discovery")
 	peers, err := routingDiscovery.FindPeers(ctx, "peer_discovery")
 	if err != nil {
-		panic(err)
+		fmt.Println(Red+"[❌]"+Reset, "Error finding peers:", err.Error())
+		return
 	}
 	for peer := range peers {
 		if peer.ID == node_p2p.node.ID() {
@@ -157,7 +156,7 @@ func (node_p2p *P2pNode) peerDiscovery(ctx context.Context) {
 		} else {
 			err := node_p2p.node.Connect(ctx, peer)
 			if err != nil {
-				fmt.Println(Yellow+"[!]"+Reset, "Could NOT connect to peer: ", peer.ID)
+				fmt.Println(Yellow+"[!]"+Reset, "Could NOT connect to peer:", peer.ID)
 			} else {
 				fmt.Println(Green+"[✓]"+Reset, "Connected to peer:", peer.ID)
 			}
@@ -170,18 +169,20 @@ func (node_p2p *P2pNode) ReturnPeerList() {
 	fmt.Println(val.PeersWithAddrs())
 }
 
-func (node_p2p *P2pNode) BlockListener(ctx context.Context) {
+func (node_p2p *P2pNode) blockListener(ctx context.Context) {
 
 	go func() {
 		for {
 			msg, err := node_p2p.blockchainSubscription.Next(ctx)
 			if err != nil {
-				panic(err)
+				fmt.Println(Red+"[❌]"+Reset, "Error getting new data:", err.Error())
+				continue
 			}
 			temp_bc := certificate.NewBlockChain()
 			err = json.Unmarshal(msg.GetData(), temp_bc)
 			if err != nil {
-				panic(err)
+				fmt.Println(Red+"[❌]"+Reset, "Error decoding JSON data:", err.Error())
+				continue
 			}
 			if !temp_bc.ChainValid() {
 				continue
@@ -199,11 +200,11 @@ func (node_p2p *P2pNode) BlockListener(ctx context.Context) {
 						continue
 					} else {
 						if temp_latest != nil {
-							node_p2p.BlockPublisher(ctx)
+							node_p2p.blockPublisher(ctx)
 						}
 					}
 				} else {
-					node_p2p.BlockPublisher(ctx)
+					node_p2p.blockPublisher(ctx)
 				}
 				node_p2p.LockNet.Unlock()
 			}
@@ -211,12 +212,8 @@ func (node_p2p *P2pNode) BlockListener(ctx context.Context) {
 	}()
 }
 
-func (node_p2p *P2pNode) _AddBlock(ctx context.Context, data []byte, prikey *rsa.PrivateKey) {
-	node_p2p.blockchain.AddBlock(data, prikey, 0)
-	node_p2p.BlockPublisher(ctx)
-}
-
 func (node_p2p *P2pNode) NewCertPublisher(ctx context.Context, filename string, private_key string) {
+	fmt.Println(Blue+"[📢]", "Publishing new data!", Reset)
 	data := certificate.FileByteOut(filename)
 	cert_info := NewCertPublish{
 		Data:       data,
@@ -224,36 +221,42 @@ func (node_p2p *P2pNode) NewCertPublisher(ctx context.Context, filename string, 
 	}
 	jsoned_data, err := json.Marshal(cert_info)
 	if err != nil {
-		panic(err)
+		fmt.Println(Red+"[❌]"+Reset, "Error Reading JSON data:", err.Error())
+		return
 	}
 	err = node_p2p.newcertTopic.Publish(ctx, jsoned_data)
 	if err != nil {
-		panic(err)
+		fmt.Println(Red+"[❌]"+Reset, "Error Publishing new data:", err.Error())
+		return
 	}
+	fmt.Println(Green+"[📢]", "Published new data!", Reset)
 }
 
-func (node_p2p *P2pNode) NewCertListener(ctx context.Context) {
+func (node_p2p *P2pNode) newCertListener(ctx context.Context) {
 	go func() {
 		for {
 			msg, err := node_p2p.newcertSubscription.Next(ctx)
 			if err != nil {
-				panic(err)
+				fmt.Println(Red+"[❌]"+Reset, "Error getting new certificate data:", err.Error())
+				continue
 			}
 			var temp_cert NewCertPublish
 			err = json.Unmarshal(msg.GetData(), &temp_cert)
 			if err != nil {
-				panic(err)
+				fmt.Println(Red+"[❌]"+Reset, "Error Reading JSON:", err.Error())
+				continue
 			}
 			priv_key := keygen.ParsePrivateRSA(temp_cert.PrivateKey)
 			node_p2p.LockNet.Lock()
-			fmt.Println("Mining new data...")
+			fmt.Println(Blue+"[💻]", "Mining newly recieved data!", Reset)
 			if node_p2p.blockchain.CheckDataExists(temp_cert.Data) {
+				fmt.Println(Green+"[💻]", "Data exists! Not mining!", Reset)
 				node_p2p.LockNet.Unlock()
 				continue
 			}
 			node_p2p.blockchain.AddBlock(temp_cert.Data, priv_key, RAND_FUNC())
-			node_p2p.BlockPublisher(ctx)
-			fmt.Println("Block mined!")
+			node_p2p.blockPublisher(ctx)
+			fmt.Println(Green+"[💻]", "Block mined!", Reset)
 			node_p2p.LockNet.Unlock()
 		}
 	}()
@@ -275,81 +278,27 @@ func (node *P2pNode) CheckCertificate(data []byte, pubkey *rsa.PublicKey) bool {
 	return node.blockchain.CheckSignature(data, pubkey)
 }
 
-func (node_p2p *P2pNode) BlockPublisher(ctx context.Context) {
-	fmt.Println("Publishing blocks!")
+func (node_p2p *P2pNode) blockPublisher(ctx context.Context) {
+	fmt.Println(Blue+"[📢]", "Publishing blocks!", Reset)
 	if !node_p2p.blockchain.ChainValid() {
 		return
 	}
 	jsoned_bc, err := json.Marshal(node_p2p.blockchain)
 	if err != nil {
-		panic(err)
+		fmt.Println(Red+"[❌]"+Reset, "Error Writing JSON:", err.Error())
+		return
 	}
 	err = node_p2p.blockchainTopic.Publish(ctx, jsoned_bc)
 	if err != nil {
-		panic(err)
+		fmt.Println(Red+"[❌]"+Reset, "Error Publishing new data:", err.Error())
+		return
 	}
+	fmt.Println(Green+"[📢]", "Blocks published!", Reset)
 }
 
 func (node_p2p *P2pNode) CloseNode() {
 	err := node_p2p.node.Close()
 	if err != nil {
-		panic(err)
-	}
-}
-
-// TODO: Remove below functions
-
-func StartNode(ctx context.Context) *host.Host {
-	node, err := libp2p.New(
-		ctx,
-		libp2p.ListenAddrStrings("/ip4/127.0.0.1/tcp/0"),
-		libp2p.Ping(false),
-	)
-	if err != nil {
-		panic(err)
-	}
-	return &node
-}
-
-func ConnectToNode(ctx context.Context, node *host.Host, host string) {
-	ping_service := &ping.PingService{
-		Host: *node,
-	}
-	(*node).SetStreamHandler(ping.ID, ping_service.PingHandler)
-
-	addr, err := multiaddr.NewMultiaddr(host)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(addr)
-	peer, err := peerstore.AddrInfoFromP2pAddr(addr)
-	if err != nil {
-		panic(err)
-	}
-	if err := (*node).Connect(ctx, *peer); err != nil {
-		panic(err)
-	}
-	ch := ping_service.Ping(ctx, peer.ID)
-	for i := 0; i < 5; i++ {
-		res := <-ch
-		fmt.Println("Pinged ", host, "in", res.RTT)
-	}
-}
-
-func NodeInfo(node *host.Host) []multiaddr.Multiaddr {
-	peer_info := &peerstore.AddrInfo{
-		ID:    (*node).ID(),
-		Addrs: (*node).Addrs(),
-	}
-	addrs, err := peerstore.AddrInfoToP2pAddrs(peer_info)
-	if err != nil {
-		panic(err)
-	}
-	return addrs
-}
-
-func CloseNode(node *host.Host) {
-	if err := (*node).Close(); err != nil {
-		panic(err)
+		fmt.Println(Red+"[❌]"+Reset, "Error shutting down node:", err.Error())
 	}
 }

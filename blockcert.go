@@ -22,7 +22,7 @@ func generateKeys(filename string) {
 func shell(ctx context.Context, node *p2p.P2pNode) {
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Printf("\033[35mblockcert_shell>\033[0m ")
+		fmt.Printf("\033[35mDEBUG>\033[0m ")
 		cli, _ := reader.ReadString('\n')
 		cli = strings.Replace(cli, "\n", "", -1)
 		cli = strings.Replace(cli, "\r", "", -1)
@@ -43,6 +43,8 @@ func shell(ctx context.Context, node *p2p.P2pNode) {
 			} else {
 				fmt.Println("Blockchain INVALID! Rebuilding!")
 			}
+		case "interfaces":
+			node.PrintInterfaces()
 		case "checkcert":
 			pubKey := keygen.ParsePublicRSA(cli_args[2])
 			ret := node.CheckCertificate(certificate.FileByteOut(cli_args[1]), pubKey)
