@@ -182,8 +182,13 @@ func (node_p2p *P2pNode) BlockListener(ctx context.Context) {
 					curr_latest := node_p2p.blockchain.GetLatest()
 					if temp_latest != nil && curr_latest != nil && temp_latest.Proof > curr_latest.Proof {
 						node_p2p.blockchain = temp_bc
+					} else if temp_latest != nil && curr_latest != nil && temp_latest.Proof == curr_latest.Proof {
+						node_p2p.LockNet.Unlock()
+						continue
 					} else {
-						node_p2p.BlockPublisher(ctx)
+						if temp_latest != nil {
+							node_p2p.BlockPublisher(ctx)
+						}
 					}
 				} else {
 					node_p2p.BlockPublisher(ctx)
