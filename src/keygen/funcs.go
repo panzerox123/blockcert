@@ -36,6 +36,18 @@ func SaveHexKey(filename string, private *rsa.PrivateKey, public *rsa.PublicKey)
 	fmt.Fprintf(out_file, "Private: %s\nPublic: %s\n", private_hex, public_hex)
 }
 
+// Encode private key to hex
+func EncodePrivateRSA(input *rsa.PrivateKey) string {
+	private_bytes := x509.MarshalPKCS1PrivateKey(input)
+	return hex.EncodeToString(private_bytes)
+}
+
+// Encode public key to hex
+func EncodePublicRSA(input *rsa.PublicKey) string {
+	public_bytes := x509.MarshalPKCS1PublicKey(input)
+	return hex.EncodeToString(public_bytes)
+}
+
 // Parse the hex value for private key
 func ParsePrivateRSA(input string) *rsa.PrivateKey {
 	private_hex, err := hex.DecodeString(input)

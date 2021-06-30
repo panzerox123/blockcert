@@ -3,12 +3,14 @@ package main
 import (
 	"bufio"
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 
+	"github.com/panzerox123/blockcert/src/api"
 	"github.com/panzerox123/blockcert/src/certificate"
 	"github.com/panzerox123/blockcert/src/keygen"
 	"github.com/panzerox123/blockcert/src/p2p"
@@ -58,30 +60,55 @@ func shell(ctx context.Context, node *p2p.P2pNode) {
 }
 
 func main() {
-	if len(os.Args) > 1 {
-		switch os.Args[1] {
-		case "keygen":
-			if len(os.Args) < 3 {
-				generateKeys("certificate.key")
-				return
-			} else {
-				generateKeys(os.Args[2])
-			}
-		case "shell":
-			ctx := context.Background()
-			var node *p2p.P2pNode
-			if len(os.Args) > 2 {
-				node = p2p.NewP2pNode(ctx, os.Args[2])
-			} else {
-				node = p2p.NewP2pNode(ctx, "")
-			}
-			go shell(ctx, node)
-			ch := make(chan os.Signal, 1)
-			signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-			<-ch
-			fmt.Printf("Shutting down...")
-			node.CloseNode()
+	startDebug := flag.Bool("debug", false, "Start the debug shell")
+	generateKey := flag.Bool("keygen", false, "Generate a Private and Public RSA Key")
+	key_output := flag.String("o", "", "Output for the generated keys!")
+	flag.Parse()
 
-		}
+	if *generateKey {
+		generateKeys(*key_output)
+		os.Exit(0)
 	}
+	ctx := context.Background()
+	node := p2p.NewP2pNode(ctx, "")
+	if *startDebug {
+		go shell(ctx, node)
+	} else {
+		go api.StartServer(8080, node)
+	}
+
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	<-ch
+	fmt.Printf("Shutting down...")
+	node.CloseNode()
+	/*
+		if len(os.Args) > 1 {
+			switch os.Args[1] {
+			case "keygen":
+				if len(os.Args) < 3 {
+					generateKeys("certificate.key")
+					return
+				} else {
+					generateKeys(os.Args[2])
+				}
+			case "shell":
+				ctx := context.Background()
+				var node *p2p.P2pNode
+				if len(os.Args) > 2 {
+					node = p2p.NewP2pNode(ctx, os.Args[2])
+				} else {
+					node = p2p.NewP2pNode(ctx, "")
+				}
+				go shell(ctx, node)
+				ch := make(chan os.Signal, 1)
+				signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+				<-ch
+				fmt.Printf("Shutting down...")
+				node.CloseNode()
+
+			}
+		}
+	*/
+
 }
