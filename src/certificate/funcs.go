@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -12,6 +13,10 @@ import (
 	"github.com/panzerox123/blockcert/src/keygen"
 )
 
+func (bc *BlockChain) SaveToJson(srcFile string) {
+	fileDat, _ := json.MarshalIndent(bc, "", " ")
+	_ = ioutil.WriteFile(srcFile, fileDat, 0644)
+}
 func FileByteOut(srcFile string) []byte {
 	data, err := ioutil.ReadFile(srcFile)
 	if err != nil {
