@@ -229,12 +229,14 @@ func (node_p2p *P2pNode) NewCertListener(ctx context.Context) {
 			}
 			priv_key := keygen.ParsePrivateRSA(temp_cert.PrivateKey)
 			node_p2p.LockNet.Lock()
+			fmt.Println("Mining new data...")
 			if node_p2p.blockchain.CheckDataExists(temp_cert.Data) {
 				node_p2p.LockNet.Unlock()
 				continue
 			}
 			node_p2p.blockchain.AddBlock(temp_cert.Data, priv_key, RAND_FUNC())
 			node_p2p.BlockPublisher(ctx)
+			fmt.Println("Block mined!")
 			node_p2p.LockNet.Unlock()
 		}
 	}()
@@ -257,6 +259,7 @@ func (node *P2pNode) CheckCertificate(data []byte, pubkey *rsa.PublicKey) bool {
 }
 
 func (node_p2p *P2pNode) BlockPublisher(ctx context.Context) {
+	fmt.Println("Publishing blocks!")
 	if !node_p2p.blockchain.ChainValid() {
 		return
 	}
