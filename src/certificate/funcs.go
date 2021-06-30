@@ -14,7 +14,7 @@ import (
 )
 
 func (bc *BlockChain) SaveToJson(srcFile string) {
-	fileDat, _ := json.MarshalIndent(bc, "", " ")
+	fileDat, _ := json.Marshal(bc)
 	_ = ioutil.WriteFile(srcFile, fileDat, 0644)
 }
 func FileByteOut(srcFile string) []byte {

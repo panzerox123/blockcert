@@ -25,6 +25,7 @@ func shell(ctx context.Context, node *p2p.P2pNode) {
 		fmt.Printf("\033[35mblockcert_shell>\033[0m ")
 		cli, _ := reader.ReadString('\n')
 		cli = strings.Replace(cli, "\n", "", -1)
+		cli = strings.Replace(cli, "\r", "", -1)
 		cli_args := strings.Split(cli, " ")
 		switch cli_args[0] {
 		case "addcert":
