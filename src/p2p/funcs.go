@@ -25,6 +25,16 @@ import (
 
 var DISABLE_DISCOVERY bool = false
 
+var Reset = "\033[0m"
+var Red = "\033[31m"
+var Green = "\033[32m"
+var Yellow = "\033[33m"
+var Blue = "\033[34m"
+var Purple = "\033[35m"
+var Cyan = "\033[36m"
+var Gray = "\033[37m"
+var White = "\033[97m"
+
 func RAND_FUNC() int {
 	return 2 + rand.Intn(4)
 }
@@ -34,6 +44,7 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 	node, err := libp2p.New(
 		ctx,
 		libp2p.Defaults,
+		libp2p.NATPortMap(),
 	)
 	if err != nil {
 		panic(err)
@@ -127,9 +138,9 @@ func (node_p2p *P2pNode) peerDiscovery(ctx context.Context) {
 		go func() {
 			defer wg.Done()
 			if err := node_p2p.node.Connect(ctx, *peerinfo); err != nil {
-				fmt.Println("(Bootstrap)!! Could not connect to peer: ", peerinfo.ID)
+				fmt.Println(Yellow+"[!]"+Reset, "[BOOTSTRAP]Could NOT connect to peer: ", peerinfo.ID)
 			} else {
-				fmt.Println("(Bootstrap)Connected to peer: ", peerinfo.ID)
+				fmt.Println(Green+"[✓]"+Reset, "[BOOTSTRAP]Connected to peer:", peerinfo.ID)
 			}
 		}()
 	}
@@ -146,9 +157,10 @@ func (node_p2p *P2pNode) peerDiscovery(ctx context.Context) {
 		} else {
 			err := node_p2p.node.Connect(ctx, peer)
 			if err != nil {
-				fmt.Println("!! Could not connect to peer: ", peer.ID)
+				fmt.Println(Yellow+"[!]"+Reset, "Could NOT connect to peer: ", peer.ID)
+			} else {
+				fmt.Println(Green+"[✓]"+Reset, "Connected to peer:", peer.ID)
 			}
-			fmt.Println("Connected to peer:", peer.ID)
 		}
 	}
 }
