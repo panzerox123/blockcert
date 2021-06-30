@@ -258,6 +258,9 @@ func (node *P2pNode) VerifyChain() bool {
 	fmt.Println(val)
 	return val
 }
+func (node *P2pNode) bcToJson(srcFile string) {
+	node.blockchain.SaveToJson(srcFile)
+}
 
 func (node *P2pNode) CheckCertificate(data []byte, pubkey *rsa.PublicKey) bool {
 	return node.blockchain.CheckSignature(data, pubkey)
