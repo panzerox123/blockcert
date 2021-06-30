@@ -34,6 +34,7 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 	node, err := libp2p.New(
 		ctx,
 		libp2p.Defaults,
+		libp2p.NATPortMap(),
 	)
 	if err != nil {
 		panic(err)
