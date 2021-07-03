@@ -25,7 +25,7 @@ func GenerateKeyPair(bits int) (*rsa.PrivateKey, *rsa.PublicKey) {
 func SaveHexKey(filename string, private *rsa.PrivateKey, public *rsa.PublicKey) {
 	out_file, err := os.Create(filename)
 	if err != nil {
-		log.Fatal(err.Error())
+		fmt.Println("File not found!")
 	}
 	defer out_file.Close()
 	private_bytes := x509.MarshalPKCS1PrivateKey(private)
