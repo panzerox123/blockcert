@@ -62,7 +62,7 @@ func shell(ctx context.Context, node *p2p.P2pNode) {
 func main() {
 	startDebug := flag.Bool("debug", false, "Start the debug shell")
 	generateKey := flag.Bool("keygen", false, "Generate a Private and Public RSA Key")
-	key_output := flag.String("o", "", "Output for the generated keys!")
+	key_output := flag.String("o", "certificate.key", "Output for the generated keys!")
 	flag.Parse()
 
 	if *generateKey {
