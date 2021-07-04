@@ -82,33 +82,4 @@ func main() {
 	<-ch
 	fmt.Printf("Shutting down...")
 	node.CloseNode()
-	/*
-		if len(os.Args) > 1 {
-			switch os.Args[1] {
-			case "keygen":
-				if len(os.Args) < 3 {
-					generateKeys("certificate.key")
-					return
-				} else {
-					generateKeys(os.Args[2])
-				}
-			case "shell":
-				ctx := context.Background()
-				var node *p2p.P2pNode
-				if len(os.Args) > 2 {
-					node = p2p.NewP2pNode(ctx, os.Args[2])
-				} else {
-					node = p2p.NewP2pNode(ctx, "")
-				}
-				go shell(ctx, node)
-				ch := make(chan os.Signal, 1)
-				signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-				<-ch
-				fmt.Printf("Shutting down...")
-				node.CloseNode()
-
-			}
-		}
-	*/
-
 }
