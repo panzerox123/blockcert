@@ -20,7 +20,7 @@ import (
 	"github.com/panzerox123/blockcert/src/keygen"
 )
 
-var DISABLE_DISCOVERY bool = false
+var DISABLE_DISCOVERY bool = true
 
 var Reset = "\033[0m"
 var Red = "\033[31m"
