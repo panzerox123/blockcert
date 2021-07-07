@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -12,9 +13,8 @@ import (
 
 var node *p2p.P2pNode
 
-func newCertHandler(res http.ResponseWriter, req *http.Request) {
-	// fmt.Println(req.FormValue("PrivateKey"))
-	err := req.ParseMultipartForm(1024<<20)
+func checkCertHandler(res http.ResponseWriter, req *http.Request) {
+	err := req.ParseMultipartForm(1024 << 20)
 	if err != nil {
 		res.WriteHeader(500)
 		res.Write([]byte("Error Retrieving file D:"))
@@ -29,10 +29,40 @@ func newCertHandler(res http.ResponseWriter, req *http.Request) {
 	}
 	defer file.Close()
 	fileBytes, err := ioutil.ReadAll(file)
-	if err !=nil {
+	if err != nil {
 		fmt.Println(err.Error())
 	}
-	fmt.Println(fileBytes)
+	pubkey := keygen.ParsePublicRSA(req.FormValue("PublicKey"))
+	ret := node.CheckCertificate(fileBytes, pubkey)
+	if ret {
+		res.WriteHeader(200)
+		res.Write([]byte("true"))
+	} else {
+		res.WriteHeader(200)
+		res.Write([]byte("false"))
+	}
+}
+
+func newCertHandler(res http.ResponseWriter, req *http.Request) {
+	err := req.ParseMultipartForm(1024 << 20)
+	if err != nil {
+		res.WriteHeader(500)
+		res.Write([]byte("Error Retrieving file D:"))
+		fmt.Println(err.Error())
+		return
+	}
+	file, _, err := req.FormFile("Data")
+	if err != nil {
+		res.WriteHeader(500)
+		res.Write([]byte("Error Reading file"))
+		fmt.Println(err.Error())
+	}
+	defer file.Close()
+	fileBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	node.NewCertPublisher(context.Background(), fileBytes, req.FormValue("PrivateKey"))
 	res.WriteHeader(200)
 	res.Write([]byte("Success! :D"))
 }
@@ -54,6 +84,7 @@ func keygenHandler(res http.ResponseWriter, req *http.Request) {
 func httpRequestHandler(PORT int) {
 	http.HandleFunc("/keygen", keygenHandler)
 	http.HandleFunc("/new_cert", newCertHandler)
+	http.HandleFunc("/check_cert", checkCertHandler)
 	fmt.Println("SERVER STARTED ON PORT", PORT)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", PORT), nil)
 	if err != nil {

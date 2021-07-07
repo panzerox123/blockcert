@@ -212,9 +212,8 @@ func (node_p2p *P2pNode) blockListener(ctx context.Context) {
 	}()
 }
 
-func (node_p2p *P2pNode) NewCertPublisher(ctx context.Context, filename string, private_key string) {
+func (node_p2p *P2pNode) NewCertPublisher(ctx context.Context, data []byte, private_key string) {
 	fmt.Println(Blue+"[📢]", "Publishing new data!", Reset)
-	data := certificate.FileByteOut(filename)
 	cert_info := NewCertPublish{
 		Data:       data,
 		PrivateKey: private_key,
