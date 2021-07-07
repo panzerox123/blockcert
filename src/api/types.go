@@ -5,6 +5,10 @@ type keygenStruct struct {
 	PrivateHex string `json:"PrivateKey"`
 }
 
+type checkCertStruct struct {
+	Verification bool `json:"Verification"`
+}
+
 /*
 type newCertStruct struct {
 	PrivateKey string `json:"PrivateKey"`

@@ -212,7 +212,7 @@ func (node_p2p *P2pNode) blockListener(ctx context.Context) {
 	}()
 }
 
-func (node_p2p *P2pNode) NewCertPublisher(ctx context.Context, data []byte, private_key string) {
+func (node_p2p *P2pNode) NewCertPublisher(ctx context.Context, data []byte, private_key string) error {
 	fmt.Println(Blue+"[📢]", "Publishing new data!", Reset)
 	cert_info := NewCertPublish{
 		Data:       data,
@@ -221,14 +221,15 @@ func (node_p2p *P2pNode) NewCertPublisher(ctx context.Context, data []byte, priv
 	jsoned_data, err := json.Marshal(cert_info)
 	if err != nil {
 		fmt.Println(Red+"[❌]"+Reset, "Error Reading JSON data:", err.Error())
-		return
+		return fmt.Errorf(Red+"[❌]"+Reset, "Error Reading JSON data:", err.Error())
 	}
 	err = node_p2p.newcertTopic.Publish(ctx, jsoned_data)
 	if err != nil {
 		fmt.Println(Red+"[❌]"+Reset, "Error Publishing new data:", err.Error())
-		return
+		return fmt.Errorf(Red+"[❌]"+Reset, "Error Publishing new data:", err.Error())
 	}
 	fmt.Println(Green+"[📢]", "Published new data!", Reset)
+	return nil
 }
 
 func (node_p2p *P2pNode) newCertListener(ctx context.Context) {

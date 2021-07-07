@@ -33,13 +33,14 @@ func checkCertHandler(res http.ResponseWriter, req *http.Request) {
 		fmt.Println(err.Error())
 	}
 	pubkey := keygen.ParsePublicRSA(req.FormValue("PublicKey"))
-	ret := node.CheckCertificate(fileBytes, pubkey)
-	if ret {
-		res.WriteHeader(200)
-		res.Write([]byte("true"))
-	} else {
-		res.WriteHeader(200)
-		res.Write([]byte("false"))
+	ret := checkCertStruct{
+		node.CheckCertificate(fileBytes, pubkey),
+	}
+	res.WriteHeader(200)
+	err = json.NewEncoder(res).Encode(ret)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
 	}
 }
 
@@ -48,13 +49,13 @@ func newCertHandler(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		res.WriteHeader(500)
 		res.Write([]byte("Error Retrieving file D:"))
-		fmt.Println(err.Error())
+		fmt.Println("[FRONTEND_SERVER]", err.Error())
 		return
 	}
 	file, _, err := req.FormFile("Data")
 	if err != nil {
 		res.WriteHeader(500)
-		res.Write([]byte("Error Reading file"))
+		res.Write([]byte("[FRONTEND_SERVER]Error Reading file"))
 		fmt.Println(err.Error())
 	}
 	defer file.Close()
