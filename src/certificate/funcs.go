@@ -5,20 +5,11 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"strings"
 	"time"
 
 	"github.com/panzerox123/blockcert/src/keygen"
 )
-
-func FileByteOut(srcFile string) []byte {
-	data, err := ioutil.ReadFile(srcFile)
-	if err != nil {
-		panic(err)
-	}
-	return data
-}
 
 // Create new object of type Certificate
 func NewCertificate(timeStamp int64, fileHash string, priv_key *rsa.PrivateKey) *Certificate {

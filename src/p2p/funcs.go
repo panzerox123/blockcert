@@ -20,18 +20,6 @@ import (
 	"github.com/panzerox123/blockcert/src/keygen"
 )
 
-var DISABLE_DISCOVERY bool = true
-
-var Reset = "\033[0m"
-var Red = "\033[31m"
-var Green = "\033[32m"
-var Yellow = "\033[33m"
-var Blue = "\033[34m"
-var Purple = "\033[35m"
-var Cyan = "\033[36m"
-var Gray = "\033[37m"
-var White = "\033[97m"
-
 func RAND_FUNC() int {
 	return 2 + rand.Intn(4)
 }
@@ -96,7 +84,8 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 		fmt.Println(Red+"[❌]"+Reset, "Error subscribing to topic \"Newcert\":", err.Error())
 		return nil
 	}
-	node_p2p.blockchain = certificate.NewBlockChain()
+	//node_p2p.blockchain = certificate.NewBlockChain()
+	node_p2p.blockchain = certificate.ReadBlockChain()
 	node_p2p.blockListener(ctx)
 	node_p2p.blockPublisher(ctx)
 	node_p2p.newCertListener(ctx)
@@ -208,6 +197,7 @@ func (node_p2p *P2pNode) blockListener(ctx context.Context) {
 				}
 				node_p2p.LockNet.Unlock()
 			}
+			node_p2p.blockchain.SaveBlockchainJson()
 		}
 	}()
 }
