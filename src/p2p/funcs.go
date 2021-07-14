@@ -192,6 +192,7 @@ func (node_p2p *P2pNode) blockListener(ctx context.Context) {
 						node_p2p.blockchain = temp_bc
 					} else if temp_latest != nil && curr_latest != nil && temp_latest.Proof == curr_latest.Proof {
 						node_p2p.LockNet.Unlock()
+						node_p2p.blockchain.SaveBlockchainJson()
 						continue
 					} else {
 						if temp_latest != nil {
