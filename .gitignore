@@ -3,9 +3,3 @@ blockcert
 *.exe
 *.json
 # test extensions
-*.log
-*.jpg
-*.png
-*.pdf
-*.docx
-*.txt
