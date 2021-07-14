@@ -55,6 +55,14 @@ func shell(ctx context.Context, node *p2p.P2pNode) {
 			} else {
 				fmt.Println("Certificate INVALID! Please try again!")
 			}
+		case "keygen":
+			if len(cli_args) > 1 {
+				generateKeys(cli_args[1])
+			} else {
+				generateKeys("certificate.key")
+			}
+		case "discover":
+			node.PeerDiscovery(ctx)
 		}
 	}
 }

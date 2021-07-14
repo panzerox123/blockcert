@@ -62,7 +62,7 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 	}
 	node_p2p.node = node
 	if !DISABLE_DISCOVERY {
-		node_p2p.peerDiscovery(ctx)
+		node_p2p.PeerDiscovery(ctx)
 	}
 	node_p2p.blockchainTopic, err = node_p2p.pubsub.Join("Blockchain")
 	if err != nil {
@@ -104,13 +104,13 @@ func (node_p2p *P2pNode) peerDiscoveryTimed(ctx context.Context) {
 		for {
 			time.Sleep(30 * time.Minute)
 			fmt.Println(Blue+"[⌛]"+Reset, "Discovering new peers!")
-			node_p2p.peerDiscovery(ctx)
+			node_p2p.PeerDiscovery(ctx)
 			node_p2p.blockPublisher(ctx)
 		}
 	}()
 }
 
-func (node_p2p *P2pNode) peerDiscovery(ctx context.Context) {
+func (node_p2p *P2pNode) PeerDiscovery(ctx context.Context) {
 	kaddht, err := kdht.New(ctx, node_p2p.node)
 	if err != nil {
 		fmt.Println(Red+"[❌]"+Reset, "Error creating new DHT:", err.Error())
