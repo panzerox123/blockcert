@@ -116,6 +116,18 @@ func (bc *BlockChain) CheckSignature(data []byte, public_key *rsa.PublicKey) boo
 	return false
 }
 
+func (bc *BlockChain) CompareChains(temp *BlockChain) bool {
+	if len(temp.Chain) >= len(bc.Chain) {
+		for i, x := range bc.Chain {
+			if x.calcHash() != temp.Chain[i].calcHash() {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}
+
 // Check if the BlockChain is valid
 func (bc *BlockChain) ChainValid() bool {
 	for i := 0; i < len(bc.Chain); i++ {

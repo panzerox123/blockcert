@@ -31,7 +31,6 @@ func shell(ctx context.Context, node *p2p.P2pNode) {
 		cli_args := strings.Split(cli, " ")
 		switch cli_args[0] {
 		case "addcert":
-			//privateKey := keygen.ParsePrivateRSA(cli_args[2])
 			data := certificate.FileByteOut(cli_args[1])
 			node.NewCertPublisher(ctx, data, cli_args[2])
 			fmt.Println("Certificate successfully added!")

@@ -177,9 +177,15 @@ func (node_p2p *P2pNode) blockListener(ctx context.Context) {
 				continue
 			} else {
 				node_p2p.LockNet.Lock()
-				if (!node_p2p.blockchain.ChainValid()) || (len(temp_bc.Chain) > len(node_p2p.blockchain.Chain)) {
+				if !node_p2p.blockchain.ChainValid() {
 					node_p2p.blockchain = temp_bc
-				} else if len(temp_bc.Chain) == len(node_p2p.blockchain.Chain) {
+				} else if len(temp_bc.Chain) > len(node_p2p.blockchain.Chain) {
+					if node_p2p.blockchain.CompareChains(temp_bc) {
+						node_p2p.blockchain = temp_bc
+					} else {
+						node_p2p.blockPublisher(ctx)
+					}
+				} else if len(temp_bc.Chain) == len(node_p2p.blockchain.Chain) && node_p2p.blockchain.CompareChains(temp_bc) {
 					temp_latest := temp_bc.GetLatest()
 					curr_latest := node_p2p.blockchain.GetLatest()
 					if temp_latest != nil && curr_latest != nil && temp_latest.Proof > curr_latest.Proof {
