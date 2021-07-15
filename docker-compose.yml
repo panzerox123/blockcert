@@ -1,0 +1,22 @@
+services:
+    node_1:
+        build: .
+        ports:
+            - 9000:8080
+        volumes:
+            - data1:/data
+
+    node_2:
+        build: .
+        volumes:
+            - data2:/data
+    
+    node_3:
+        build: .
+        volumes:
+            - data3:/data
+
+volumes:
+    data1:
+    data2:
+    data3:

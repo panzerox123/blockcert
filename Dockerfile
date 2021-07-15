@@ -1,6 +1,6 @@
 FROM golang:1.16.6-buster
 WORKDIR /root/
-RUN git clone https://github.com/panzerox123/blockcert
+COPY ./ ./blockcert
 WORKDIR /root/blockcert
 RUN go build blockcert.go
 RUN go install

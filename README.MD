@@ -27,16 +27,16 @@ $ go install
 Make sure you have an accessible `GOPATH`.
 ### Build using Docker
 ```
-$ docker build docker/ -t <imagename>:<tagname>
+$ docker build ./ -t <imagename>:<tagname>
 ```
 #### Running the docker image
 **From Dockerhub**
 ```
-$ docker run -p <local_port>:8080 panzerox123/blockcert
+$ docker run --rm -it -p <local_port>:8080 -v <path>:/data panzerox123/blockcert
 ```
 **If you want to use your own image**
 ```
-$ docker run -p <local_port>:8080 <imagename>:<tagname>
+$ docker run --rm -it -p <local_port>:8080 -v <path>:/data <imagename>:<tagname>
 ```
 
 ## Usage

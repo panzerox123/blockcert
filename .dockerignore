@@ -1,0 +1,4 @@
+blockcert
+*.key
+*.exe
+*.json
