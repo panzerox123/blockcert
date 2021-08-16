@@ -82,10 +82,20 @@ func keygenHandler(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func statusRequestHandler(res http.ResponseWriter, req *http.Request) {
+	fmt.Println("Returning status")
+	err := json.NewEncoder(res).Encode(node.Status.Status)
+	if err != nil {
+		res.WriteHeader(500)
+		res.Write([]byte("Error returning Status"))
+	}
+}
+
 func httpRequestHandler(PORT int) {
 	http.HandleFunc("/keygen", keygenHandler)
 	http.HandleFunc("/new_cert", newCertHandler)
 	http.HandleFunc("/check_cert", checkCertHandler)
+	http.HandleFunc("/status", statusRequestHandler)
 	fmt.Println("SERVER STARTED ON PORT", PORT)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", PORT), nil)
 	if err != nil {

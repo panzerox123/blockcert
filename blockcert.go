@@ -89,5 +89,6 @@ func main() {
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	<-ch
 	fmt.Printf("Shutting down...")
+	node.CloseConnections()
 	node.CloseNode()
 }

@@ -17,7 +17,13 @@ type P2pNode struct {
 	newcertTopic           *pubsub.Topic
 	newcertSubscription    *pubsub.Subscription
 	interfaces             []string
+	Status                 P2pStatus
 	LockNet                sync.Mutex
+}
+
+type P2pStatus struct {
+	Status     string
+	LockStatus sync.Mutex
 }
 
 type NewCertPublish struct {

@@ -21,11 +21,13 @@ import (
 )
 
 func RAND_FUNC() int {
-	return 2 + rand.Intn(4)
+	return 4 + rand.Intn(4)
 }
 
 func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 	var node_p2p P2pNode
+	node_p2p.Status.LockStatus.Lock()
+	node_p2p.Status.Status = "startup"
 	node, err := libp2p.New(
 		ctx,
 		libp2p.Defaults,
@@ -84,6 +86,8 @@ func NewP2pNode(ctx context.Context, addrstr string) *P2pNode {
 		fmt.Println(Red+"[❌]"+Reset, "Error subscribing to topic \"Newcert\":", err.Error())
 		return nil
 	}
+	node_p2p.Status.Status = "listening"
+	node_p2p.Status.LockStatus.Unlock()
 	//node_p2p.blockchain = certificate.NewBlockChain()
 	node_p2p.blockchain = certificate.ReadBlockChain()
 	node_p2p.blockListener(ctx)
@@ -150,6 +154,13 @@ func (node_p2p *P2pNode) PeerDiscovery(ctx context.Context) {
 				fmt.Println(Green+"[✓]"+Reset, "Connected to peer:", peer.ID)
 			}
 		}
+	}
+}
+
+func (node_p2p *P2pNode) CloseConnections() {
+	err := node_p2p.node.Network().Close()
+	if err != nil {
+		fmt.Println(Red+"[❌]"+Reset, "Error closing", err.Error())
 	}
 }
 
@@ -251,9 +262,13 @@ func (node_p2p *P2pNode) newCertListener(ctx context.Context) {
 				node_p2p.LockNet.Unlock()
 				continue
 			}
+			node_p2p.Status.LockStatus.Lock()
+			node_p2p.Status.Status = "mining"
 			node_p2p.blockchain.AddBlock(temp_cert.Data, priv_key, RAND_FUNC())
 			node_p2p.blockPublisher(ctx)
-			fmt.Println(Green+"[💻]", "Block mined!", Reset)
+			fmt.Println(Green+"[💻]", "Block mined!",  Reset)
+			node_p2p.Status.Status = "listening"
+			node_p2p.Status.LockStatus.Unlock()
 			node_p2p.LockNet.Unlock()
 		}
 	}()
