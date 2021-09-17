@@ -4,17 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-
 	"github.com/panzerox123/blockcert/src/keygen"
 	"github.com/panzerox123/blockcert/src/p2p"
+	"io/ioutil"
+	"net/http"
 )
 
 var node *p2p.P2pNode
 
 func checkCertHandler(res http.ResponseWriter, req *http.Request) {
 	err := req.ParseMultipartForm(1024 << 20)
+	res.Header().Set("Access-Control-Allow-Origin", "*")
 	if err != nil {
 		res.WriteHeader(500)
 		res.Write([]byte("Error Retrieving file D:"))
@@ -46,6 +46,7 @@ func checkCertHandler(res http.ResponseWriter, req *http.Request) {
 
 func newCertHandler(res http.ResponseWriter, req *http.Request) {
 	err := req.ParseMultipartForm(1024 << 20)
+	res.Header().Set("Access-Control-Allow-Origin", "*")
 	if err != nil {
 		res.WriteHeader(500)
 		res.Write([]byte("Error Retrieving file D:"))
@@ -69,6 +70,7 @@ func newCertHandler(res http.ResponseWriter, req *http.Request) {
 }
 
 func keygenHandler(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Access-Control-Allow-Origin", "*")
 	fmt.Println("Generating Keys!")
 	private_key, public_key := keygen.GenerateKeyPair(512)
 	new_keypair := keygenStruct{
