@@ -31,7 +31,7 @@ type NewCertPublish struct {
 	PrivateKey string
 }
 
-var DISABLE_DISCOVERY bool = true
+var DISABLE_DISCOVERY bool = false
 
 var Reset = "\033[0m"
 var Red = "\033[31m"
