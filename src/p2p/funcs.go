@@ -196,7 +196,7 @@ func (node_p2p *P2pNode) blockListener(ctx context.Context) {
 					} else {
 						node_p2p.blockPublisher(ctx)
 					}
-				} else if len(temp_bc.Chain) == len(node_p2p.blockchain.Chain) && node_p2p.blockchain.CompareChains(temp_bc) {
+				} else if len(temp_bc.Chain) == len(node_p2p.blockchain.Chain) {
 					temp_latest := temp_bc.GetLatest()
 					curr_latest := node_p2p.blockchain.GetLatest()
 					if temp_latest != nil && curr_latest != nil && temp_latest.Proof > curr_latest.Proof {
@@ -266,7 +266,7 @@ func (node_p2p *P2pNode) newCertListener(ctx context.Context) {
 			node_p2p.Status.Status = "mining"
 			node_p2p.blockchain.AddBlock(temp_cert.Data, priv_key, RAND_FUNC())
 			node_p2p.blockPublisher(ctx)
-			fmt.Println(Green+"[💻]", "Block mined!",  Reset)
+			fmt.Println(Green+"[💻]", "Block mined!", Reset)
 			node_p2p.Status.Status = "listening"
 			node_p2p.Status.LockStatus.Unlock()
 			node_p2p.LockNet.Unlock()
